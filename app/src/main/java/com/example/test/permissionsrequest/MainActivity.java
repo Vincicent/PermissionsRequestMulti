@@ -10,8 +10,11 @@ import android.os.Build;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,9 +30,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
             if(arePermissionsEnabled()){
                 //                    permissions granted, continue flow normally
-            }else{
+            }else {
                 new AlertDialog.Builder(this)
                         .setMessage("Afin d'assurer le bon fonctionnement de l'application, veuillez accepter les accès suivants")
                         .setPositiveButton("Suivant", (dialog, which) -> requestMultiplePermissions())
@@ -82,14 +86,45 @@ public class MainActivity extends AppCompatActivity {
             }
             //all is good, continue flow
         }
+        if(requestCode == 1){
+            if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED){
+                boolean requestAgain = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && shouldShowRequestPermissionRationale(Manifest.permission.CAMERA);
+                if (requestAgain) {
+                    Toast.makeText(this, "Permission non accordée, veuillez accepter", Toast.LENGTH_SHORT).show();
+                }  else {
+                        showAlertCamera();
+                    }
+            }
+        }
     }
 
 
-    public void startAppPermissions(){
-        Intent intent = new Intent(Settings.ACTION_APPLICATION_SETTINGS,
-                Uri.fromParts("Package",getPackageName(), null));
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    public void showAlertCamera(){
+
+        new AlertDialog.Builder(this)
+                .setMessage("Vos paramètres pour l'appareil photo sont désactivé. \nMerci de l'activer")
+                .setPositiveButton("Réglages", (dialog, which) ->permissionSettingIntent())
+                //.setNegativeButton("Annuler", (dialog, which) -> dialog.dismiss())
+                .create()
+                .show();
+    }
+
+    public void permissionSettingIntent(){
+
+        Intent intent = new Intent();
+        intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        Uri uri = Uri.fromParts("package", getPackageName(), null);
+        intent.setData(uri);
         startActivity(intent);
+
+        }
+
+
+
+    public void takePhoto(View v){
+        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.CAMERA},1);
+        }
 
     }
 
